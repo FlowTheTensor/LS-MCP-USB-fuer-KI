@@ -1,6 +1,6 @@
 
 # MCP – USB für KI
-# [Starten](https://flowthetensor.github.io/MCP-USB-fuer-KI/)
+# [Starten](https://flowthetensor.github.io/LS-MCP-USB-fuer-KI/)
 Interaktive Lernseite zum **Model Context Protocol (MCP)** und zu **JSON-RPC**, geeignet für alle Schularten.
 Ein KI-Kern ist isoliert. In sechs Leveln verbinden die Lernenden ihn mit der Außenwelt und erreichen jeweils eine „Clearance“.
 
@@ -53,12 +53,12 @@ Der Ordner ist bereits ein Git-Repository (Branch `main`).
 2. Verbinden und hochladen:
 
    ```powershell
-   git remote add origin https://github.com/FlowTheTensor/MCP-USB-fuer-KI.git
+   git remote add origin https://github.com/FlowTheTensor/LS-MCP-USB-fuer-KI.git
    git push -u origin main
    ```
 
 3. Im Repository: **Settings → Pages → Build and deployment → Source: „Deploy from a branch“**, Branch `main`, Ordner `/ (root)`, speichern.
-4. Nach ein bis zwei Minuten ist die Seite erreichbar unter `https://flowthetensor.github.io/MCP-USB-fuer-KI/`.
+4. Nach ein bis zwei Minuten ist die Seite erreichbar unter `https://flowthetensor.github.io/LS-MCP-USB-fuer-KI/`.
 
 Lokal testen: einfach `index.html` im Browser öffnen, oder `python -m http.server` im Ordner starten und `http://localhost:8000` aufrufen.
 
@@ -66,3 +66,26 @@ Lokal testen: einfach `index.html` im Browser öffnen, oder `python -m http.serv
 
 - [MCP-Spezifikation](https://modelcontextprotocol.io/specification)
 - [JSON-RPC 2.0](https://www.jsonrpc.org/specification)
+
+## Lizenz
+
+[![CC BY 4.0](https://img.shields.io/badge/Lizenz-CC%20BY%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by/4.0/deed.de)
+
+**MCP – USB für KI** von **Christoph Rothaug, Jakob-Preh-Schule Bad Neustadt**, steht unter der Lizenz [Creative Commons Namensnennung 4.0 International (CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/deed.de). Der vollständige Lizenztext steht in der Datei [`LICENSE`](LICENSE).
+
+Du darfst das Material (Quellcode, Texte, Aufgaben und Grafiken) kopieren, weitergeben und verändern, auch kommerziell. Dafür musst du
+
+- den Urheber nennen: *Christoph Rothaug, Jakob-Preh-Schule Bad Neustadt*,
+- auf die Lizenz verlinken: <https://creativecommons.org/licenses/by/4.0/deed.de>,
+- angeben, ob du etwas verändert hast.
+
+Vorschlag für die Namensnennung: *„MCP – USB für KI“ von Christoph Rothaug, Jakob-Preh-Schule Bad Neustadt, CC BY 4.0, https://github.com/FlowTheTensor/LS-MCP-USB-fuer-KI*
+
+Die übrigen Bilder in `img/` (`hero.png`, `lvl*-*.png`, `system-online.png`, `og-image.png`) sind KI-generiert und stehen ebenfalls unter CC BY 4.0.
+
+**Ausgenommen** von dieser Lizenz sind:
+
+| Bestandteil | Rechte |
+|---|---|
+| `img/logoschulecyber-klein.png` | Logo der Jakob-Preh-Schule – alle Rechte bei der Schule |
+| Schriften JetBrains Mono, Orbitron, Space Grotesk | über Google Fonts eingebunden, SIL Open Font License 1.1 |
