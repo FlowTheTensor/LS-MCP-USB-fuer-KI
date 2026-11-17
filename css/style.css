@@ -440,3 +440,63 @@ details.tasks summary { cursor: pointer; font: 700 13px var(--mono); color: var(
   *, *::before, *::after { animation: none !important; transition: none !important; }
   html { scroll-behavior: auto; }
 }
+
+/* =========================================================
+   Farbschema-Schalter und helles Schema ("Labor bei Tag")
+   Standard bleibt das dunkle Terminal-Design; js/farbschema.js
+   setzt am <html> die Klasse "hellmodus" oder "dunkelmodus".
+   ========================================================= */
+.farbschema-platz { display: flex; }
+.farbschema-knopf {
+  display: grid; place-items: center; width: 34px; height: 34px; flex: none;
+  border: 1px solid var(--line2); border-radius: 50%;
+  background: transparent; color: var(--muted); cursor: pointer;
+  transition: color .15s, border-color .15s, box-shadow .15s;
+}
+.farbschema-knopf:hover { color: var(--cyan); border-color: var(--cyan); box-shadow: var(--glow-c); }
+.farbschema-knopf:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.farbschema-knopf svg { width: 18px; height: 18px; display: block; }
+
+html.hellmodus {
+  --bg: #f3f6f9;
+  --bg2: #e8edf2;
+  --panel: #ffffff;
+  --panel2: #eef3f7;
+  --line: #d3dde6;
+  --line2: #b6c5d3;
+  --text: #15212d;
+  --muted: #526374;
+  --cyan: #0a7480;
+  --cyan-dim: #8ccbd2;
+  --red: #c81e3a;
+  --red-dim: #f3cdd4;
+  --green: #17784a;
+  --amber: #9a5c06;
+  --glow-c: 0 0 0 3px rgba(10, 116, 128, .14);
+  --glow-r: 0 0 0 3px rgba(200, 30, 58, .16);
+}
+html.hellmodus body {
+  background: radial-gradient(ellipse at 50% -10%, rgba(10, 116, 128, .07), transparent 60%), linear-gradient(var(--bg), var(--bg));
+}
+html.hellmodus body::after { background: repeating-linear-gradient(0deg, rgba(0,0,0,.015) 0 1px, transparent 1px 3px); }
+html.hellmodus .topbar { background: rgba(243, 246, 249, .9); }
+html.hellmodus h1, html.hellmodus h3, html.hellmodus .brand,
+html.hellmodus .lvl-nav a:hover, html.hellmodus .lvl-nav a.current, html.hellmodus .lane.act { color: var(--text); }
+html.hellmodus .lvl-nav a.current { border-color: var(--text); background: rgba(0,0,0,.04); }
+html.hellmodus code { color: #0b5f69; }
+html.hellmodus pre, html.hellmodus .terminal textarea { background: #f0f4f8; }
+html.hellmodus .j-key, html.hellmodus .t-array, html.hellmodus .t-object { color: #1d5f9e; }
+html.hellmodus .j-str, html.hellmodus .py .p-str, html.hellmodus .t-string { color: #2a7a2e; }
+html.hellmodus .j-lit, html.hellmodus .py .p-kw, html.hellmodus .t-boolean, html.hellmodus .t-null { color: #a8306f; }
+html.hellmodus .port.on .port-box, html.hellmodus .a-client rect, html.hellmodus .ac-node.hub rect { fill: #dcf2f4; }
+html.hellmodus .arch .a-onloop { stroke: var(--bg); }
+html.hellmodus .widget { background: #f7fafc; }
+html.hellmodus .core-body { fill: #e6edf3; }
+html.hellmodus .a-server rect { fill: #dff1e7; }
+html.hellmodus .streak i { background: #fbeef0; }
+html.hellmodus .test { background: linear-gradient(180deg, rgba(200,30,58,.05), transparent 70%), #ffffff; }
+html.hellmodus .level.done .test { background: linear-gradient(180deg, rgba(10,116,128,.06), transparent 70%), #ffffff; }
+html.hellmodus .btn { color: #ffffff; }
+html.hellmodus .btn.ghost, html.hellmodus .toggle-row .btn, html.hellmodus .tabs .btn { color: var(--cyan); }
+html.hellmodus .toast, html.hellmodus .toggle-row .btn.sel, html.hellmodus .tabs .btn.sel { color: #ffffff; }
+html.hellmodus .pinned-logo { filter: drop-shadow(0 8px 12px rgba(0,0,0,.25)); }

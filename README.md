@@ -67,6 +67,10 @@ Lokal testen: einfach `index.html` im Browser öffnen, oder `python -m http.serv
 - [MCP-Spezifikation](https://modelcontextprotocol.io/specification)
 - [JSON-RPC 2.0](https://www.jsonrpc.org/specification)
 
+## Farbschema hell/dunkel
+
+Der runde Knopf mit Mond/Sonne oben rechts schaltet zwischen hellem und dunklem Schema um. Die Wahl wird im Browser gespeichert (`localStorage`, Schlüssel `jps-lernsituationen-farbschema`) und gilt für alle Lernsituationen der Jakob-Preh-Schule. Ohne gespeicherte Wahl gilt das dunkle Terminal-Design. Umgesetzt in `js/farbschema.js`; die Farben stehen als CSS-Variablen in der Stylesheet-Datei.
+
 ## Lizenz
 
 [![CC BY 4.0](https://img.shields.io/badge/Lizenz-CC%20BY%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by/4.0/deed.de)
