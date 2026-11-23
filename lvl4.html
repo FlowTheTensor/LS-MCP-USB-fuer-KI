@@ -187,6 +187,136 @@
     </table>
     <p class="note">Mit „Immer erlauben“ rutscht man von <em>in</em> zu <em>on</em> the Loop. Bei harmlosen Lese-Tools ist das vertretbar.
       Bei Tools, die <strong>löschen, senden oder bezahlen</strong>, sollte jede Aktion einzeln freigegeben werden.</p>
+    <p>Eine Freigabe ist aber nur so gut wie das, was der Mensch dabei <strong>sieht</strong>. Wie es besser geht, zeigt <a href="#lvl4-s5">Station 5</a>.</p>
+  </article>
+
+  <article class="station" id="lvl4-s5">
+    <div class="crumb">LVL 4 · Station 5 · <span class="tag">Interaktiv</span></div>
+    <h3>Freigabe mit eigener Oberfläche</h3>
+    <p>Der Freigabe-Dialog des Hosts zeigt nur den <strong>Toolnamen und Rohdaten</strong>. Mit einer MCP-App (siehe <a href="lvl3.html#lvl3-s6">LVL 3, Station 6</a>) geht es besser:
+      Das LLM ruft zuerst das harmlose Tool <code>note_vorschlagen</code> auf. Es <strong>schreibt nichts</strong>, sondern sucht nur Schüler und Kurs heraus.
+      Im Chat erscheint eine Freigabe-App. Erst der Klick des Menschen ruft <code>note_freigeben</code> auf, und das schreibt in die Datenbank.</p>
+    <figure class="img-slot banner">
+      <img src="img/lvl4-freigabe.png" alt="Ein Freigabe-Pult mit zwei Auswahlkarten auf einem Bildschirm und zwei großen leuchtenden Tasten, eine cyan, eine rot" onerror="this.closest('figure').classList.add('missing')">
+      <div class="ph">img/lvl4-freigabe.png</div>
+    </figure>
+    <p>Probiere beide Freigaben aus. Bei welcher weißt du, <strong>was</strong> du freigibst?</p>
+    <div class="widget freigabe" id="freigabe">
+      <p class="fg-auftrag">👤 Auftrag im Chat: <em>„Trage für Werner aus der 7a eine 2,0 in Mathematik als Schulaufgabe ein.“</em></p>
+      <div class="grid2">
+        <div class="fg-panel raw">
+          <div class="fg-head">A · Freigabe-Dialog des Hosts</div>
+          <div class="fg-body">
+            <p class="fg-q">⚠ Darf <code>add_grade</code> ausgeführt werden?</p>
+<pre class="json">{
+  "schueler_id": 10,
+  "kurs_id": 6,
+  "note": 2.0,
+  "art": "Schulaufgabe"
+}</pre>
+            <div class="row"><button class="btn small" data-raw="ja">Erlauben</button><button class="btn ghost small" data-raw="nein">Ablehnen</button></div>
+            <p class="fg-out" id="fg-raw-out" aria-live="polite"></p>
+          </div>
+        </div>
+        <div class="fg-panel app">
+          <div class="appframe-bar"><span>▣ App · ui://schule/notenfreigabe.html</span><span class="sandbox">Sandbox</span></div>
+          <div class="fg-body">
+            <p class="fg-q">👤 Freigabe nötig</p>
+            <p id="fg-text"></p>
+            <div class="fg-kand" id="fg-kand" role="radiogroup" aria-label="Wer ist gemeint?"></div>
+            <div class="row"><button class="btn small" id="fg-ja" disabled>Ja, eintragen</button><button class="btn ghost small" id="fg-nein">Nein, abbrechen</button></div>
+            <p class="fg-out" id="fg-app-out" aria-live="polite"></p>
+          </div>
+        </div>
+      </div>
+      <div class="term-log fg-log" id="fg-log" aria-live="polite"></div>
+      <div class="row"><button class="btn ghost small" id="fg-reset">Neu starten</button></div>
+    </div>
+    <table class="tbl">
+      <thead><tr><th></th><th>Freigabe-Dialog des Hosts</th><th>Freigabe-App</th></tr></thead>
+      <tbody>
+        <tr><th>Was sieht der Mensch?</th><td>Toolname und Rohdaten: <code>{"schueler_id": 10, "kurs_id": 6, …}</code></td><td>„Emma Werner, 7a, Mathematik, 2.0 (Schulaufgabe)“</td></tr>
+        <tr><th>Mehrere Treffer?</th><td>Das LLM <strong>rät</strong>, wer gemeint ist.</td><td>Der <strong>Mensch wählt</strong> aus.</td></tr>
+        <tr><th>Wer drückt den Knopf?</th><td>der Mensch</td><td>der Mensch, aber er weiß, <em>was</em> er freigibt</td></tr>
+      </tbody>
+    </table>
+
+    <h4><code>visibility</code>: nur für die App, nicht für das LLM</h4>
+    <p>Damit das LLM die Freigabe nicht umgehen kann, ist <code>note_freigeben</code> so gekennzeichnet:</p>
+<pre class="json">{
+  "name": "note_freigeben",
+  "_meta": {
+    "ui": {
+      "resourceUri": "ui://schule/notenfreigabe.html",
+      "visibility": ["app"]
+    }
+  }
+}</pre>
+    <p><code>"visibility": ["app"]</code> heißt: Dieses Tool ist für die Oberfläche gedacht. Der Host zeigt es dem LLM nicht an,
+      das LLM kann es also nicht selbst aufrufen. Nur die App darf es benutzen.</p>
+    <p class="warn"><strong>Aber Achtung:</strong> <code>visibility</code> ist eine <strong>Absprache</strong>, keine Sicherheitsgrenze.
+      Der Server schickt das Tool bei <code>tools/list</code> trotzdem mit und verlässt sich darauf, dass der Host es vor dem LLM versteckt.
+      Ein Client, der sich nicht daran hält, kann es aufrufen. Probiere es im <a href="lvl3.html#lvl3-s4">Terminal in LVL 3</a> aus:
+      Rufe <code>note_freigeben</code> direkt auf, einmal mit einer gültigen Note und einmal mit der Note <code>7.0</code>.</p>
+  </article>
+
+  <article class="station" id="lvl4-s6">
+    <div class="crumb">LVL 4 · Station 6 · <span class="tag">Vergleich</span></div>
+    <h3>Ist eine MCP-App ein Tunnel zum Server?</h3>
+    <p>Man könnte meinen, die App sei ein Tunnel, der den Menschen direkt mit dem MCP-Server verbindet. Das stimmt nur zur Hälfte:</p>
+    <div class="grid2">
+      <div class="card good">
+        <h4>✓ Das stimmt</h4>
+        <ul>
+          <li>Klickt der Mensch in der App, wird das <strong>LLM nicht gefragt</strong>. Es kann dabei nichts verändern oder erfinden.</li>
+          <li>Bei der Freigabe ist das gewollt: Die Entscheidung läuft am LLM vorbei.</li>
+        </ul>
+      </div>
+      <div class="card bad">
+        <h4>✗ Das stimmt nicht</h4>
+        <ul>
+          <li>Die App hat <strong>keine eigene Verbindung</strong> zum Server. Jeder Aufruf geht als Nachricht an den <strong>Host</strong>, und der leitet ihn weiter.</li>
+          <li>Der Host ist der <strong>Harness</strong>. Er zeigt die App abgeschottet an, prüft die CSP und entscheidet, welche Tools die App aufrufen darf.</li>
+          <li>Das <strong>LLM öffnet</strong> die App mit seinem Tool-Aufruf und sieht das erste Ergebnis.</li>
+          <li>Das LLM bleibt <strong>informiert</strong> (<code>updateModelContext</code>). Ein Tunnel wäre unsichtbar.</li>
+        </ul>
+      </div>
+    </div>
+    <figure class="img-slot banner">
+      <img src="img/lvl4-bankschalter.png" alt="Ein Schalterfenster in einer Maschinenhalle, dahinter eine Tresortür, daneben steht ein Service-Roboter mit einer Notiz" onerror="this.closest('figure').classList.add('missing')">
+      <div class="ph">img/lvl4-bankschalter.png</div>
+    </figure>
+    <h4>Ein besseres Bild: der Bankschalter</h4>
+    <p>Der Berater schickt dich an den Schalter. Dort erledigst du dein Geschäft direkt mit der Bank, ohne dass der Berater dabei ist.
+      Der Schalter gehört aber zur Filiale: Sie bestimmt, was am Schalter möglich ist, und hat alles im Blick.
+      Hinterher bekommt der Berater eine Notiz, was du erledigt hast.</p>
+    <table class="tbl">
+      <thead><tr><th>Bank</th><th>MCP App</th></tr></thead>
+      <tbody>
+        <tr><th>Berater</th><td>das <strong>LLM</strong>: schickt dich mit seinem Tool-Aufruf zur App</td></tr>
+        <tr><th>Schalter</th><td>die <strong>App</strong>: die Oberfläche im Chat</td></tr>
+        <tr><th>Bank</th><td>der <strong>MCP-Server</strong> mit den Daten</td></tr>
+        <tr><th>Filiale</th><td>der <strong>Host</strong> bzw. sein <strong>Harness</strong>: bestimmt, was die App darf, und sieht jeden Aufruf</td></tr>
+        <tr><th>Notiz an den Berater</th><td><code>updateModelContext</code></td></tr>
+      </tbody>
+    </table>
+    <p class="note"><strong>Merksatz:</strong> Eine MCP-App ist ein Weg <strong>am LLM vorbei</strong>, aber <strong>nie am Harness vorbei</strong>.</p>
+
+    <h4>Sicherheit</h4>
+    <table class="tbl">
+      <thead><tr><th>Schutz</th><th>Wo?</th><th>Wovor schützt er?</th></tr></thead>
+      <tbody>
+        <tr><th>Sandbox</th><td>Host</td><td>Die App läuft abgeschottet und kann nicht auf andere Chats oder Dateien zugreifen.</td></tr>
+        <tr><th>CSP</th><td>Server legt fest, Host setzt durch</td><td>Die <em>Content Security Policy</em> bestimmt, von welchen Adressen die App Skripte laden darf. Im Projekt ist das genau eine: <code>https://cdn.jsdelivr.net</code>.</td></tr>
+        <tr><th><code>textContent</code> statt <code>innerHTML</code></th><td>HTML-Seite der App</td><td>Namen aus der Datenbank werden nie als HTML-Code ausgeführt.</td></tr>
+        <tr><th>Prüfung im Server</th><td>MCP-Server</td><td>Ungültige Noten werden abgelehnt, <strong>egal ob der Aufruf vom LLM, von der App oder von woanders kommt</strong>.</td></tr>
+      </tbody>
+    </table>
+    <p class="note">Die letzte Zeile ist die wichtigste: <strong>Entscheidend ist, was der Server prüft.</strong> Alles andere kann umgangen werden.</p>
+    <p><strong>Ausblick:</strong> Bei MCP Apps hat ein <em>Programmierer</em> die Oberfläche vorher gebaut. Das LLM entscheidet nur, <em>wann</em> sie erscheint.
+      Es gibt auch Ansätze, bei denen das LLM die Oberfläche zur Laufzeit selbst beschreibt, z. B. <strong>A2UI</strong> von Google.</p>
+    <p><strong>Praxis:</strong> Im Projekt <a href="https://github.com/FlowTheTensor/SQLite-per-MCP/blob/agenten-erweiterung/docs/mcp-apps.md" target="_blank" rel="noopener">SQLite-per-MCP, Teil 1b</a>
+      laufen die Notenübersicht und die Freigabe-App echt in Claude Desktop.</p>
   </article>
 
   <div class="test" data-level="4"></div>

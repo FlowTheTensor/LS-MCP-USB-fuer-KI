@@ -319,6 +319,40 @@
       opts: ["Der Server bittet den Host, das LLM etwas generieren zu lassen", "Der Server nimmt Audio auf",
         "Der Client testet zufällig Tools", "Das LLM wählt eine Stichprobe aus der Datenbank"],
       explain: "Mit Sampling kann ein Server die KI des Hosts nutzen, ohne selbst ein Modell zu haben. Der Host behält dabei die Kontrolle."
+    },
+    {
+      q: "Woran erkennt der Host, dass ein Tool eine eigene Oberfläche (MCP App) mitbringt?",
+      opts: ["Am Feld <code>_meta.ui.resourceUri</code> in der Tool-Beschreibung", "Am Wort „App“ im Toolnamen",
+        "Das LLM sagt es dem Host", "An einer Notification <code>tools/list_changed</code>"],
+      explain: "Das Tool verweist mit <code>_meta.ui.resourceUri</code> auf eine UI-Ressource, z. B. <code>ui://schule/notenuebersicht.html</code>."
+    },
+    {
+      q: "Mit welchem URI-Schema bietet ein Server die HTML-Seite einer MCP App an? (nur das Schema, z. B. <code>https://</code>)",
+      input: true, accept: ["ui://", "ui", "ui:"],
+      explain: "Die Oberfläche ist eine Resource mit einer Adresse wie <code>ui://schule/notenuebersicht.html</code> und dem MIME-Typ <code>text/html;profile=mcp-app</code>."
+    },
+    {
+      q: "Wer zeigt die HTML-Seite einer MCP App an?",
+      opts: ["Der Host, in einem abgeschotteten Rahmen (Sandbox)", "Das LLM", "Der MCP-Server öffnet ein eigenes Fenster", "Der Browser des Servers"],
+      explain: "Der Host holt die Seite mit <code>resources/read</code> und zeigt sie abgeschottet im Chat an."
+    },
+    {
+      q: "Der Mensch wechselt in einer MCP App die Klasse. Wer wird dabei gefragt?",
+      opts: ["Niemand außer Host und Server: Die App ruft über den Host ein Tool auf, das LLM ist nicht beteiligt",
+        "Das LLM, es entscheidet, ob gewechselt werden darf", "Das LLM, es schreibt die neue Tabelle", "Die App verbindet sich direkt mit der Datenbank"],
+      explain: "Klicks in der App laufen am LLM vorbei: App → Host → Server. Das spart Tokens und ist vorhersagbar."
+    },
+    {
+      q: "Ein Host unterstützt keine MCP Apps. Was passiert, wenn das LLM <code>notenuebersicht</code> aufruft?",
+      opts: ["Das LLM bekommt die Daten trotzdem als Text und antwortet normal", "Der Aufruf schlägt mit einem Protokollfehler fehl",
+        "Der Server verweigert die Antwort", "Das LLM zeichnet die Oberfläche selbst"],
+      explain: "Eine MCP App muss immer auch ohne Oberfläche sinnvoll funktionieren. Nur die Anzeige fehlt."
+    },
+    {
+      q: "Wie erfährt das LLM, was der Mensch gerade in der App sieht?",
+      opts: ["Die App schickt ihm über den Host eine Notiz mit <code>updateModelContext</code>", "Das LLM schaut sich den Bildschirm an",
+        "Gar nicht, das ist unmöglich", "Der Server ruft das LLM direkt auf"],
+      explain: "Mit <code>updateModelContext</code> landet eine stille Notiz im Kontext. Bei der nächsten Frage weiß das LLM Bescheid."
     }
   ];
 
@@ -417,6 +451,36 @@
         opts: [t, ...stufen.map(x => x[1]).filter(x => x !== t)],
         explain: "<strong>in</strong> the Loop: jede Aktion einzeln freigeben · <strong>on</strong> the Loop: beobachten und eingreifen können · <strong>autonom</strong>: kein Mensch beteiligt."
       };
+    },
+    {
+      q: "Was bedeutet <code>\"visibility\": [\"app\"]</code> bei einem Tool?",
+      opts: ["Das Tool ist nur für die Oberfläche gedacht, der Host zeigt es dem LLM nicht an", "Das Tool ist für alle unsichtbar",
+        "Nur der Mensch darf das Tool im Terminal aufrufen", "Das Tool wird nur bei <code>tools/list</code> versteckt, aufrufen kann es nur das LLM"],
+      explain: "So kann das LLM <code>note_freigeben</code> nicht selbst aufrufen und die Freigabe umgehen."
+    },
+    {
+      q: "Ist <code>\"visibility\": [\"app\"]</code> eine Sicherheitsgrenze?",
+      opts: ["Nein, eine Absprache: Ein Client, der sich nicht daran hält, kann das Tool trotzdem aufrufen. Schützen muss die Prüfung im Server",
+        "Ja, der Server lehnt alle Aufrufe ab, die nicht aus der App kommen", "Ja, das Tool wird bei <code>tools/list</code> gar nicht mitgeschickt",
+        "Ja, weil das LLM das Feld lesen kann"],
+      explain: "Der Server schickt das Tool trotzdem mit und verlässt sich auf den Host. Entscheidend ist, was der Server prüft."
+    },
+    {
+      q: "Vervollständige: Eine MCP App ist ein Weg am … vorbei, aber nie am … vorbei.",
+      opts: ["… LLM … Harness (Host)", "… Harness … LLM", "… Server … Host", "… Menschen … LLM"],
+      explain: "Klicks laufen ohne LLM, aber jeder Aufruf geht über den Host. Er entscheidet, was die App darf."
+    },
+    {
+      q: "Warum ist die Freigabe-App besser als ein Dialog mit Rohdaten wie <code>{\"schueler_id\": 10, …}</code>?",
+      opts: ["Der Mensch sieht Namen statt ids und wählt bei mehreren Treffern selbst aus", "Sie ist schneller, weil das LLM sie ausfüllt",
+        "Sie braucht keinen Host", "Sie trägt die Note ohne Klick ein"],
+      explain: "Er weiß, <em>was</em> er freigibt. Bei zwei Werner rät nicht mehr das LLM, sondern der Mensch entscheidet."
+    },
+    {
+      q: "Wovor schützt die CSP (Content Security Policy) einer MCP App?",
+      opts: ["Die App darf nur von erlaubten Adressen Skripte und Inhalte laden", "Vor falschen Noten in der Datenbank",
+        "Davor, dass das LLM die App aufruft", "Vor Tippfehlern im JSON"],
+      explain: "Der Server legt die erlaubten Adressen fest, der Host setzt sie durch. Ungültige Noten fängt nur die Prüfung im Server ab."
     }
   ];
 

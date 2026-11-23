@@ -174,6 +174,7 @@
         <li>Versuche, mit <code>DELETE FROM schueler</code> Daten zu löschen. Welche Fehlerart bekommst du?</li>
         <li>Erzeuge absichtlich die Fehler <code>-32700</code>, <code>-32601</code> und <code>-32602</code>.</li>
         <li>Was antwortet der Server auf eine Notification?</li>
+        <li>Weitere Aufträge zu den Tools mit Oberfläche findest du in <a href="#lvl3-s6">Station 6</a>.</li>
       </ol>
     </details>
   </article>
@@ -195,6 +196,100 @@
         <tr><th>Elicitation</th><td>Der Server fragt beim Menschen nach einer fehlenden Angabe, z. B. „Für welche Klasse?“</td></tr>
       </tbody>
     </table>
+  </article>
+
+  <article class="station" id="lvl3-s6">
+    <div class="crumb">LVL 3 · Station 6 · <span class="tag">Erweiterung</span></div>
+    <h3>MCP Apps: Das Modul bringt seinen eigenen Bildschirm mit</h3>
+    <p>Bisher liefert ein Tool immer <strong>Text</strong>, meistens JSON. Das LLM formuliert daraus eine Antwort. Das funktioniert, hat aber Grenzen:</p>
+    <ul>
+      <li>Eine Notenübersicht mit 17 Schülerinnen und Schülern ist als Text unübersichtlich.</li>
+      <li>Willst du eine andere Klasse sehen, musst du wieder fragen, und das LLM muss wieder ein Tool aufrufen.</li>
+      <li>Bei einer Freigabe siehst du nur <code>schueler_id: 37, kurs_id: 12</code>. Wer ist das?</li>
+    </ul>
+    <p><strong>MCP Apps</strong> lösen das. Seit Januar 2026 sind sie die erste offizielle <strong>Erweiterung</strong> von MCP, gemeinsam entwickelt von Anthropic und OpenAI.
+      Ein Server kann damit zu einem Tool eine <strong>HTML-Seite</strong> mitliefern, die der Host <strong>direkt im Chat</strong> anzeigt.</p>
+    <figure class="img-slot banner">
+      <img src="img/lvl3-mcp-app.png" alt="Ein Modul steckt am KI-Kern und klappt einen eigenen leuchtenden Bildschirm mit einer Tabelle auf" onerror="this.closest('figure').classList.add('missing')">
+      <div class="ph">img/lvl3-mcp-app.png</div>
+    </figure>
+
+    <h4>Die zwei Teile einer MCP-App</h4>
+    <div class="grid2">
+      <div class="card prim">
+        <h4>▤ UI-Ressource</h4>
+        <p>eine HTML-Seite, die der Server als <strong>Resource</strong> mit einer Adresse <code>ui://…</code> anbietet.
+          Der MIME-Typ <code>text/html;profile=mcp-app</code> sagt dem Host: Das ist eine App-Oberfläche.</p>
+<pre class="json">{
+  "uri": "ui://schule/notenuebersicht.html",
+  "name": "notenuebersicht",
+  "mimeType": "text/html;profile=mcp-app"
+}</pre>
+      </div>
+      <div class="card prim">
+        <h4>⚙ Tool mit Verweis</h4>
+        <p>ein ganz normales <strong>Tool</strong>, das im Feld <code>_meta.ui.resourceUri</code> auf diese Seite zeigt.</p>
+<pre class="json">{
+  "name": "notenuebersicht",
+  "description": "Zeigt die Noten einer Klasse …",
+  "inputSchema": { … },
+  "_meta": {
+    "ui": { "resourceUri": "ui://schule/notenuebersicht.html" }
+  }
+}</pre>
+      </div>
+    </div>
+    <p>Der Rest ist ganz normales MCP: Das Tool gibt Daten zurück, und das LLM sieht diese Daten wie immer.
+      Neu ist, dass der Host die Seite mit <code>resources/read</code> holt, sie in einem abgeschotteten Rahmen (<em>Sandbox</em>) anzeigt
+      und ihr das Tool-Ergebnis übergibt. App und Host sprechen dabei wieder <strong>JSON-RPC</strong>, nur eben innerhalb des Browsers per <code>postMessage</code>.</p>
+
+    <h4>Ausprobieren: eine App im Chat</h4>
+    <p>Jemand hat gefragt: <em>„Zeig mir die Mathe-Noten der 7a.“</em> Wechsle in der App Klasse und Fach und beobachte rechts,
+      <strong>wer mit wem spricht</strong>. Achte besonders auf die Anzeige <strong>LLM</strong>.</p>
+    <div class="widget appdemo" id="appdemo">
+      <div class="ad-host">
+        <div class="ad-bar"><span>🖥 HOST · Chat</span><span class="ad-llm" id="ad-llm"><i></i>LLM <b id="ad-llm-state">unbeteiligt</b></span></div>
+        <div class="ad-chat" id="ad-chat">
+          <div class="bubble user">Zeig mir die Mathe-Noten der 7a.</div>
+          <div class="bubble llm">🧠 ruft <code>notenuebersicht</code> auf: <code>{"klasse": "7a", "fach": "Mathematik"}</code></div>
+          <div class="appframe">
+            <div class="appframe-bar"><span>▣ App · ui://schule/notenuebersicht.html</span><span class="sandbox">Sandbox</span></div>
+            <div class="appframe-body">
+              <div class="ad-filter">
+                <label>Klasse <select id="ad-klasse" aria-label="Klasse"></select></label>
+                <label>Fach <select id="ad-fach" aria-label="Fach"></select></label>
+              </div>
+              <p class="ad-meta" id="ad-meta"></p>
+              <div class="ad-tab-wrap"><table class="ad-tab" id="ad-tab"></table></div>
+            </div>
+          </div>
+          <div id="ad-chat-more"></div>
+        </div>
+      </div>
+      <div class="ad-side">
+        <div class="ad-count">LLM-Aufrufe: <b id="ad-n-llm">0</b> · Tool-Aufrufe aus der App: <b id="ad-n-app">0</b></div>
+        <div class="term-log ad-log" id="ad-log" aria-live="polite"></div>
+        <div class="row">
+          <button class="btn small" id="ad-ask">Im Chat fragen: „Wer ist hier am besten?“</button>
+          <button class="btn ghost small" id="ad-reset">Neu starten</button>
+        </div>
+      </div>
+    </div>
+    <p class="note"><strong>Die zentrale Erkenntnis:</strong> Die App kann <strong>selbst Tools aufrufen</strong>. Klickt der Mensch, fragt die App über den Host den Server,
+      und die Anzeige ändert sich, <em>ganz ohne LLM</em>. Das ist schneller, kostet keine Tokens und ist vorhersagbar.
+      Damit das LLM trotzdem weiß, was der Mensch gerade sieht, schickt die App ihm mit <code>updateModelContext</code> still eine Notiz.</p>
+    <p class="warn"><strong>Und wenn der Host keine MCP Apps kann?</strong> Dann bekommt das LLM die Daten trotzdem als Text und antwortet ganz normal.
+      Eine MCP-App muss deshalb immer auch <strong>ohne</strong> Oberfläche sinnvoll funktionieren. Genau das siehst du im Terminal in Station 4:
+      Dort bist du ein Client ohne Oberfläche.</p>
+    <details class="tasks">
+      <summary>Aufträge zu MCP Apps (im Terminal, Station 4)</summary>
+      <ol>
+        <li>Schicke <code>tools/list</code>. Welche Tools haben eine Oberfläche? Woran erkennst du das?</li>
+        <li>Rufe <code>notenuebersicht</code> für die 7a in Mathematik auf (Vorlage „MCP App: …“). Was bekommst du, was würde ein Host mit MCP Apps zusätzlich tun?</li>
+        <li>Hole die Oberfläche mit <code>resources/list</code> und <code>resources/read</code>. Welcher MIME-Typ steht dabei? Von welcher Adresse darf die Seite Skripte laden?</li>
+        <li>Rufe <code>note_vorschlagen</code> auf. Wurde dabei schon eine Note eingetragen? Was passiert bei einem Nachnamen, den es zweimal gibt?</li>
+      </ol>
+    </details>
   </article>
 
   <div class="test" data-level="3"></div>

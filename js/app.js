@@ -366,6 +366,201 @@
     reset();
   })();
 
+  /* ---------------- MCP Apps: gemeinsame Helfer ---------------- */
+  const calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  // Nachrichtenprotokoll wie im Terminal; Schritte erscheinen kurz nacheinander
+  function msgLog(el) {
+    let gen = 0, queue = Promise.resolve();
+    const add = (cls, label, body = "") => {
+      const d = document.createElement("div"); d.className = "entry";
+      d.innerHTML = `<div class="dir ${cls}">${label}</div>${body}`;
+      el.appendChild(d); el.scrollTop = el.scrollHeight;
+    };
+    return {
+      clear() { gen++; queue = Promise.resolve(); el.innerHTML = ""; },
+      // steps: [cls, label, body?] oder Funktionen (werden zur passenden Zeit ausgeführt)
+      run(steps) {
+        const my = gen;
+        steps.forEach(s => {
+          queue = queue.then(() => new Promise(res => setTimeout(() => {
+            if (my === gen) typeof s === "function" ? s() : add(...s);
+            res();
+          }, calm ? 0 : 260)));
+        });
+        return queue;
+      }
+    };
+  }
+  const jsonBox = obj => `<pre>${hlJson(JSON.stringify(obj, null, 2))}</pre>`;
+  const hint = t => `<div class="hint">${t}</div>`;
+  const resultText = res => res.result ? res.result.content[0].text : JSON.stringify(res.error);
+  const kurz = (s, n = 140) => s.length > n ? s.slice(0, n) + " …" : s;
+
+  /* ---------------- LVL 3: MCP App „Notenübersicht“ ---------------- */
+  (function appDemo() {
+    const root = $("#appdemo");
+    if (!root) return;
+    const KURSE = { "5a": ["Mathematik", "Deutsch"], "7a": ["Mathematik", "Deutsch", "Sport"], "8b": ["Englisch"], "10a": ["Informatik"] };
+    const selK = $("#ad-klasse"), selF = $("#ad-fach"), tab = $("#ad-tab"), meta = $("#ad-meta"), more = $("#ad-chat-more");
+    const log = msgLog($("#ad-log"));
+    let nLLM = 0, nApp = 0, rpcId = 1, daten = null;
+
+    selK.innerHTML = Object.keys(KURSE).map(k => `<option>${k}</option>`).join("");
+    const fillFach = (wahl) => { selF.innerHTML = KURSE[selK.value].map(f => `<option ${f === wahl ? "selected" : ""}>${f}</option>`).join(""); };
+    const setLLM = (on, txt) => { $("#ad-llm").classList.toggle("on", on); $("#ad-llm-state").textContent = txt || (on ? "aktiv" : "unbeteiligt"); };
+    const counts = () => { $("#ad-n-llm").textContent = nLLM; $("#ad-n-app").textContent = nApp; };
+    const farbe = s => s === null ? "" : s <= 2 ? "g1" : s <= 3.5 ? "g2" : s <= 4.5 ? "g3" : "g4";
+
+    function anzeigen(d) {
+      daten = d;
+      meta.textContent = `${d.fach} · Klasse ${d.klasse} · Lehrkraft: ${d.lehrkraft}`;
+      tab.innerHTML = `<thead><tr><th>Name</th><th>Noten</th><th>Ø</th></tr></thead><tbody>` +
+        d.schueler.map(s => `<tr><td>${esc(s.name)}</td><td>${s.noten.map(n => `<span class="ad-note" title="${esc(n.art)}">${n.note.toFixed(1)}</span>`).join(" ") || "<span class='dim'>–</span>"}</td>
+          <td class="ad-avg ${farbe(s.schnitt)}">${s.schnitt === null ? "–" : `<b>${s.schnitt.toFixed(2)}</b><i style="width:${Math.round((6 - s.schnitt) / 5 * 60)}px"></i>`}</td></tr>`).join("") + "</tbody>";
+    }
+    function leer() { meta.textContent = "Die App wartet auf das Tool-Ergebnis vom Host …"; tab.innerHTML = ""; }
+
+    function start() {
+      log.clear(); more.innerHTML = ""; nLLM = 0; nApp = 0; rpcId = 1; counts();
+      selK.value = "7a"; fillFach("Mathematik"); leer(); selK.disabled = selF.disabled = true;
+      const args = { klasse: "7a", fach: "Mathematik" };
+      const res = MCPSim.tool("notenuebersicht", args, rpcId);
+      log.run([
+        ["sys", "MENSCH → HOST", hint("„Zeig mir die Mathe-Noten der 7a.“")],
+        () => { setLLM(true); nLLM++; counts(); },
+        ["llm", "HOST → LLM", hint("Frage + Toolliste")],
+        ["llm", "LLM → HOST · Tool-Wunsch", jsonBox({ tool: "notenuebersicht", arguments: args })],
+        () => setLLM(false, "wartet"),
+        ["out", "HOST → SERVER", jsonBox({ jsonrpc: "2.0", id: rpcId, method: "tools/call", params: { name: "notenuebersicht", arguments: args } })],
+        ["in", "SERVER → HOST", hint("Ergebnis (Text): " + esc(kurz(resultText(res))))],
+        ["sys", "HOST", hint("Das Tool hat <code>_meta.ui.resourceUri</code>. Also hole ich die Oberfläche dazu.")],
+        ["out", "HOST → SERVER", jsonBox({ jsonrpc: "2.0", id: rpcId + 1, method: "resources/read", params: { uri: "ui://schule/notenuebersicht.html" } })],
+        ["in", "SERVER → HOST", hint("HTML-Seite · <code>text/html;profile=mcp-app</code>")],
+        ["app", "HOST → APP · ui/notifications/tool-result", hint("Seite in der Sandbox anzeigen und das Tool-Ergebnis übergeben")],
+        () => { anzeigen(JSON.parse(resultText(res))); selK.disabled = selF.disabled = false; setLLM(true); },
+        ["llm", "HOST → LLM", hint("Tool-Ergebnis (dieselben Daten als Text)")],
+        ["llm", "LLM → MENSCH", hint("„Hier ist die Notenübersicht der 7a in Mathematik.“")],
+        () => { setLLM(false); rpcId += 2; },
+        ["sys", "DEIN ZUG", hint("Wechsle jetzt in der App Klasse oder Fach.")]
+      ]);
+    }
+
+    function wechsel() {
+      const args = { klasse: selK.value, fach: selF.value };
+      const res = MCPSim.tool("notenuebersicht", args, rpcId);
+      const id = rpcId++;
+      nApp++; counts();
+      log.run([
+        ["sys", "MENSCH → APP", hint(`wählt ${esc(args.klasse)} · ${esc(args.fach)}`)],
+        ["app", "APP → HOST · postMessage", jsonBox({ jsonrpc: "2.0", id, method: "tools/call", params: { name: "notenuebersicht", arguments: args } })],
+        ["sys", "HOST", hint("Darf die App dieses Tool aufrufen? Ja, es gehört zu ihrem Server.")],
+        ["out", "HOST → SERVER", hint("tools/call notenuebersicht")],
+        ["in", "SERVER → HOST", hint("Ergebnis: " + esc(kurz(resultText(res), 90)))],
+        ["app", "HOST → APP", hint("Antwort auf die Anfrage mit id " + id)],
+        () => anzeigen(JSON.parse(resultText(res))),
+        ["app", "APP → HOST · ui/update-model-context", jsonBox({ content: [{ type: "text", text: `Der Mensch sieht jetzt: ${args.fach}, Klasse ${args.klasse}` }] })],
+        ["sys", "LLM", hint("<strong>Das LLM war an keinem dieser Schritte beteiligt.</strong> Die Notiz liest es erst bei der nächsten Frage.")]
+      ]);
+    }
+
+    selK.addEventListener("change", () => { fillFach(); wechsel(); });
+    selF.addEventListener("change", wechsel);
+    $("#ad-reset").addEventListener("click", start);
+    $("#ad-ask").addEventListener("click", () => {
+      if (!daten) return;
+      const mit = daten.schueler.filter(s => s.schnitt !== null).sort((a, b) => a.schnitt - b.schnitt);
+      const antwort = mit.length
+        ? `In der ${daten.klasse} (${daten.fach}) hat ${mit[0].name} den besten Durchschnitt: ${mit[0].schnitt.toFixed(2)}.`
+        : `In der ${daten.klasse} (${daten.fach}) gibt es noch keine Noten.`;
+      const b1 = document.createElement("div"); b1.className = "bubble user"; b1.textContent = "Wer ist hier am besten?";
+      more.appendChild(b1);
+      log.run([
+        ["sys", "MENSCH → HOST", hint("„Wer ist hier am besten?“")],
+        () => { setLLM(true); nLLM++; counts(); },
+        ["llm", "HOST → LLM", hint(`Frage + Verlauf + Notiz der App: „Der Mensch sieht jetzt: ${esc(daten.fach)}, Klasse ${esc(daten.klasse)}“`)],
+        ["llm", "LLM → MENSCH", hint("„" + esc(antwort) + "“")],
+        () => {
+          setLLM(false);
+          const b2 = document.createElement("div"); b2.className = "bubble llm"; b2.textContent = "🧠 " + antwort;
+          more.appendChild(b2); b2.scrollIntoView({ block: "nearest", behavior: calm ? "auto" : "smooth" });
+        },
+        ["sys", "HINWEIS", hint("Das LLM bezieht sich auf die Klasse, die der Mensch <em>gerade sieht</em>. Das verdankt es <code>updateModelContext</code>.")]
+      ]);
+    });
+    start();
+  })();
+
+  /* ---------------- LVL 4: Freigabe mit eigener Oberfläche ---------------- */
+  (function freigabe() {
+    const root = $("#freigabe");
+    if (!root) return;
+    const log = msgLog($("#fg-log"));
+    const kandEl = $("#fg-kand"), ja = $("#fg-ja"), nein = $("#fg-nein"), textEl = $("#fg-text"), appOut = $("#fg-app-out"), rawOut = $("#fg-raw-out");
+    let vorschlag = null, fertig = false;
+
+    function start() {
+      log.clear(); fertig = false; rawOut.textContent = ""; appOut.textContent = ""; appOut.className = "fg-out";
+      $$("[data-raw]", root).forEach(b => { b.disabled = false; });
+      const args = { klasse: "7a", nachname: "Werner", fach: "Mathematik", note: 2.0, art: "Schulaufgabe" };
+      const d = JSON.parse(resultText(MCPSim.tool("note_vorschlagen", args, 1)));
+      vorschlag = d.vorschlag;
+      const v = vorschlag;
+      textEl.innerHTML = `Soll die Note <strong>${v.note.toFixed(1)}</strong> (${esc(v.art)}) im Fach <strong>${esc(v.fach)}</strong>, Klasse <strong>${esc(v.klasse)}</strong> eingetragen werden?` +
+        (d.kandidaten.length > 1 ? ` Es gibt <strong>${d.kandidaten.length} Treffer</strong>. Wer ist gemeint?` : "");
+      kandEl.innerHTML = d.kandidaten.map(k => `<label><input type="radio" name="fg-k" value="${k.schueler_id}"> ${esc(k.name)}</label>`).join("");
+      ja.disabled = true; nein.disabled = false;
+      $$("input", kandEl).forEach(r => r.addEventListener("change", () => { ja.disabled = fertig; }));
+      log.run([
+        ["llm", "LLM → HOST · Tool-Wunsch", jsonBox({ tool: "note_vorschlagen", arguments: args })],
+        ["out", "HOST → SERVER", hint("tools/call note_vorschlagen")],
+        ["in", "SERVER → HOST", jsonBox(d)],
+        ["app", "HOST → APP", hint("Freigabe-App anzeigen und die Treffer übergeben. Eingetragen ist noch <strong>nichts</strong>.")]
+      ]);
+    }
+
+    function entscheiden(ok) {
+      if (fertig) return;
+      fertig = true; ja.disabled = nein.disabled = true;
+      $$("input", kandEl).forEach(r => { r.disabled = true; });
+      if (!ok) {
+        appOut.textContent = "Abgebrochen. Es wurde nichts eingetragen.";
+        log.run([
+          ["sys", "MENSCH → APP", hint("klickt „Nein, abbrechen“")],
+          ["app", "APP → HOST · ui/update-model-context", jsonBox({ content: [{ type: "text", text: "Der Mensch hat die Note nicht freigegeben." }] })]
+        ]);
+        return;
+      }
+      const sel = $("input:checked", kandEl);
+      const name = sel.parentElement.textContent.trim();
+      const args = { schueler_id: +sel.value, kurs_id: vorschlag.kurs_id, note: vorschlag.note, art: vorschlag.art };
+      const res = MCPSim.tool("note_freigeben", args, 7);
+      const fehler = res.result.isError;
+      log.run([
+        ["sys", "MENSCH → APP", hint(`wählt ${esc(name)} und klickt „Ja, eintragen“`)],
+        ["app", "APP → HOST · postMessage", jsonBox({ jsonrpc: "2.0", id: 7, method: "tools/call", params: { name: "note_freigeben", arguments: args } })],
+        ["sys", "HOST (Harness)", hint("<code>note_freigeben</code> hat <code>visibility: [\"app\"]</code>: Die App darf es aufrufen, dem LLM zeige ich es gar nicht an.")],
+        ["out", "HOST → SERVER", hint("tools/call note_freigeben")],
+        ["sys", "SERVER", hint("prüft: Note zwischen 1.0 und 6.0? Gibt es Schüler und Kurs? Passt die Klasse?")],
+        [fehler ? "errd" : "in", "SERVER → HOST", hint(esc(resultText(res)))],
+        ["app", "HOST → APP", hint("Antwort auf die Anfrage mit id 7")],
+        () => { appOut.textContent = (fehler ? "✗ " : "✓ ") + resultText(res); appOut.className = "fg-out " + (fehler ? "bad" : "good"); },
+        ["app", "APP → HOST · ui/update-model-context", jsonBox({ content: [{ type: "text", text: `Note für ${name} eingetragen.` }] })],
+        ["sys", "LLM", hint("<strong>Das LLM hat bei der Entscheidung nicht mitgewirkt.</strong> Es hat nur vorgeschlagen und bekommt hinterher eine Notiz.")]
+      ]);
+    }
+
+    $$("[data-raw]", root).forEach(b => b.addEventListener("click", () => {
+      $$("[data-raw]", root).forEach(x => { x.disabled = true; });
+      rawOut.innerHTML = b.dataset.raw === "ja"
+        ? "Erlaubt. Eingetragen wurde die Note für <code>schueler_id: 10</code>. Das LLM hatte zwei Werner gefunden und einen davon <strong>geraten</strong>. Wusstest du, wer id 10 ist?"
+        : "Abgelehnt. Aber woher hättest du wissen sollen, ob <code>schueler_id: 10</code> richtig oder falsch ist?";
+    }));
+    ja.addEventListener("click", () => entscheiden(true));
+    nein.addEventListener("click", () => entscheiden(false));
+    $("#fg-reset").addEventListener("click", start);
+    start();
+  })();
+
   /* ---------------- LVL 4: Signalverfolgung ---------------- */
   (function tracer() {
     const LANES = [["👤", "Mensch"], ["🖥", "Host + Client"], ["🧠", "LLM"], ["🔌", "MCP-Server"], ["🗄", "Datenbank"]];

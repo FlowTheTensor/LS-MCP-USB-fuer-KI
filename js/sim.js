@@ -17,7 +17,13 @@
         [5, "Lena", "Bauer", "8b", "2011-05-17", "lena.bauer@schule.de"],
         [6, "Jonas", "Richter", "9a", "2010-09-08", "jonas.richter@schule.de"],
         [7, "Sophie", "Klein", "10a", "2009-12-01", "sophie.klein@schule.de"],
-        [8, "Noah", "Wolf", "10a", "2009-02-14", "noah.wolf@schule.de"]
+        [8, "Noah", "Wolf", "10a", "2009-02-14", "noah.wolf@schule.de"],
+        [9, "Clara", "Bauer", "7a", "2012-04-19", "clara.bauer@schule.de"],
+        [10, "Paul", "Werner", "7a", "2012-08-03", "paul.werner@schule.de"],
+        [11, "Emma", "Werner", "7a", "2012-02-27", "emma.werner@schule.de"],
+        [12, "Ben", "Fischer", "7a", "2012-10-11", "ben.fischer@schule.de"],
+        [13, "Lina", "Hoffmann", "5a", "2014-06-21", "lina.hoffmann@schule.de"],
+        [14, "Tim", "Becker", "5a", "2014-01-09", "tim.becker@schule.de"]
       ]
     },
     lehrer: {
@@ -33,17 +39,55 @@
     },
     kurse: {
       cols: [["id", "INTEGER"], ["fach", "TEXT"], ["klasse", "TEXT"], ["lehrer_id", "INTEGER"]],
-      rows: [[1, "Mathematik", "5a", 1], [2, "Informatik", "10a", 5], [3, "Deutsch", "5a", 3], [4, "Sport", "7a", 2], [5, "Englisch", "8b", 4]]
+      rows: [[1, "Mathematik", "5a", 1], [2, "Informatik", "10a", 5], [3, "Deutsch", "5a", 3], [4, "Sport", "7a", 2], [5, "Englisch", "8b", 4],
+        [6, "Mathematik", "7a", 2], [7, "Deutsch", "7a", 3]]
     },
     noten: {
       cols: [["id", "INTEGER"], ["schueler_id", "INTEGER"], ["kurs_id", "INTEGER"], ["note", "REAL"], ["datum", "DATE"], ["art", "TEXT"]],
       rows: [
         [1, 1, 1, 2.0, "2026-10-08", "Schulaufgabe"], [2, 1, 3, 1.7, "2026-10-15", "mündlich"],
         [3, 2, 1, 3.3, "2026-10-08", "Schulaufgabe"], [4, 7, 2, 1.0, "2026-10-20", "Schulaufgabe"],
-        [5, 8, 2, 2.3, "2026-10-20", "Schulaufgabe"], [6, 4, 4, 1.3, "2026-10-22", "mündlich"]
+        [5, 8, 2, 2.3, "2026-10-20", "Schulaufgabe"], [6, 4, 4, 1.3, "2026-10-22", "mündlich"],
+        [7, 13, 1, 1.3, "2026-10-08", "Schulaufgabe"], [8, 14, 1, 4.0, "2026-10-08", "Schulaufgabe"],
+        [9, 1, 1, 2.3, "2026-11-05", "mündlich"], [10, 2, 1, 2.7, "2026-11-05", "mündlich"],
+        [11, 4, 6, 2.7, "2026-10-14", "Schulaufgabe"], [12, 9, 6, 1.7, "2026-10-14", "Schulaufgabe"],
+        [13, 10, 6, 3.7, "2026-10-14", "Schulaufgabe"], [14, 11, 6, 2.0, "2026-10-14", "Schulaufgabe"],
+        [15, 12, 6, 4.3, "2026-10-14", "Schulaufgabe"], [16, 9, 6, 1.0, "2026-11-04", "mündlich"],
+        [17, 10, 6, 3.0, "2026-11-04", "mündlich"], [18, 12, 6, 3.7, "2026-11-04", "mündlich"],
+        [19, 4, 7, 2.0, "2026-10-21", "Schulaufgabe"], [20, 9, 7, 2.3, "2026-10-21", "Schulaufgabe"],
+        [21, 11, 7, 1.3, "2026-10-21", "Schulaufgabe"], [22, 12, 7, 3.3, "2026-10-21", "Schulaufgabe"]
       ]
     }
   };
+
+  /* ---------- MCP Apps: zwei HTML-Seiten als UI-Ressourcen (ui://) ---------- */
+  const UI_MIME = "text/html;profile=mcp-app";
+  const UI_CSP = { csp: { resourceDomains: ["https://cdn.jsdelivr.net"] } };
+  const uiSeite = (titel, inhalt) => `<!doctype html>
+<html lang="de">
+<head><meta charset="utf-8"><title>${titel}</title></head>
+<body>
+  ${inhalt}
+  <script type="module">
+    import { App } from "https://cdn.jsdelivr.net/npm/@modelcontextprotocol/ext-apps@2.0.4/dist/src/app-with-deps.js";
+    const app = new App({ name: "${titel}", version: "1.0.0" }, {});
+    app.ontoolresult = (ergebnis) => anzeigen(ergebnis);   // Ergebnis des Tool-Aufrufs vom Host
+    // … anzeigen(), Klick-Handler mit app.callServerTool(…) usw.
+    await app.connect();                                      // Verbindung zum Host aufbauen
+  </script>
+</body>
+</html>`;
+  const UI_RESOURCES = {
+    "ui://schule/notenuebersicht.html": {
+      name: "notenuebersicht", title: "Notenübersicht (Oberfläche)",
+      text: uiSeite("Notenübersicht", `<h1>Notenübersicht</h1>\n  <select id="klasse"></select> <select id="fach"></select>\n  <table id="tabelle"></table>`)
+    },
+    "ui://schule/notenfreigabe.html": {
+      name: "notenfreigabe", title: "Notenfreigabe (Oberfläche)",
+      text: uiSeite("Notenfreigabe", `<h1>👤 Freigabe nötig</h1>\n  <p id="frage"></p>\n  <button id="ja">Ja, eintragen</button> <button id="nein">Nein, abbrechen</button>`)
+    }
+  };
+  const ARTEN = ["Schulaufgabe", "mündlich"];
 
   const TOOLS = [
     {
@@ -60,6 +104,43 @@
       name: "describe_table",
       description: "Zeigt die Struktur einer Tabelle (Spalten und Datentypen).",
       inputSchema: { type: "object", properties: { table_name: { type: "string", description: "Name der Tabelle" } }, required: ["table_name"] }
+    },
+    {
+      name: "notenuebersicht",
+      description: "Zeigt die Noten einer Klasse in einem Fach als Übersicht mit Durchschnitt. Hat eine eigene Oberfläche.",
+      inputSchema: {
+        type: "object",
+        properties: { klasse: { type: "string", description: "z. B. 7a" }, fach: { type: "string", description: "z. B. Mathematik" } },
+        required: ["klasse", "fach"]
+      },
+      _meta: { ui: { resourceUri: "ui://schule/notenuebersicht.html" } }
+    },
+    {
+      name: "note_vorschlagen",
+      description: "Bereitet das Eintragen einer Note vor. Schreibt NICHTS, sondern sucht Schüler und Kurs heraus. Der Mensch gibt in der Oberfläche frei.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          klasse: { type: "string", description: "z. B. 7a" }, nachname: { type: "string", description: "Nachname der Schülerin oder des Schülers" },
+          fach: { type: "string", description: "z. B. Mathematik" }, note: { type: "number", description: "Note von 1.0 bis 6.0" },
+          art: { type: "string", description: "Schulaufgabe oder mündlich" }
+        },
+        required: ["klasse", "nachname", "fach", "note"]
+      },
+      _meta: { ui: { resourceUri: "ui://schule/notenfreigabe.html" } }
+    },
+    {
+      name: "note_freigeben",
+      description: "Trägt eine Note in die Datenbank ein. Nur für die Freigabe-Oberfläche gedacht.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          schueler_id: { type: "integer" }, kurs_id: { type: "integer" },
+          note: { type: "number", description: "Note von 1.0 bis 6.0" }, art: { type: "string", description: "Schulaufgabe oder mündlich" }
+        },
+        required: ["schueler_id", "kurs_id", "note", "art"]
+      },
+      _meta: { ui: { resourceUri: "ui://schule/notenfreigabe.html", visibility: ["app"] } }
     }
   ];
 
@@ -105,13 +186,70 @@
     return { rows: rows.map(r => Object.fromEntries(cols.map(c => [c, r[c]]))) };
   }
 
+  /* ---------- Tools der MCP Apps ---------- */
+  const gleich = (a, b) => String(a).trim().toLowerCase() === String(b).trim().toLowerCase();
+  const findeKurs = (klasse, fach) => rowsToObjects("kurse", ["id", "fach", "klasse", "lehrer_id"]).find(k => gleich(k.klasse, klasse) && gleich(k.fach, fach));
+  const alleSchueler = () => rowsToObjects("schueler", ["id", "vorname", "nachname", "klasse"]);
+
+  function notenuebersicht(id, a) {
+    const kurs = findeKurs(a.klasse, a.fach);
+    if (!kurs) return ok(id, text(`Fehler: Es gibt keinen Kurs ${a.fach} in Klasse ${a.klasse}.`, true));
+    const noten = rowsToObjects("noten", ["schueler_id", "kurs_id", "note", "art"]).filter(n => n.kurs_id === kurs.id);
+    const lehrer = rowsToObjects("lehrer", ["id", "vorname", "nachname"]).find(l => l.id === kurs.lehrer_id);
+    const schueler = alleSchueler().filter(s => s.klasse === kurs.klasse)
+      .sort((x, y) => x.nachname.localeCompare(y.nachname) || x.vorname.localeCompare(y.vorname))
+      .map(s => {
+        const eigene = noten.filter(n => n.schueler_id === s.id);
+        const schnitt = eigene.length ? Math.round(eigene.reduce((t, n) => t + n.note, 0) / eigene.length * 100) / 100 : null;
+        return { name: `${s.vorname} ${s.nachname}`, noten: eigene.map(n => ({ note: n.note, art: n.art })), schnitt };
+      });
+    return ok(id, text(asJson({ klasse: kurs.klasse, fach: kurs.fach, lehrkraft: lehrer ? `${lehrer.vorname} ${lehrer.nachname}` : null, schueler })));
+  }
+
+  function noteVorschlagen(id, a) {
+    const kurs = findeKurs(a.klasse, a.fach);
+    if (!kurs) return ok(id, text(`Fehler: Es gibt keinen Kurs ${a.fach} in Klasse ${a.klasse}.`, true));
+    const kandidaten = alleSchueler().filter(s => gleich(s.klasse, a.klasse) && gleich(s.nachname, a.nachname))
+      .map(s => ({ schueler_id: s.id, name: `${s.vorname} ${s.nachname}` }));
+    if (!kandidaten.length) return ok(id, text(`Fehler: In Klasse ${a.klasse} gibt es niemanden mit dem Nachnamen ${a.nachname}.`, true));
+    return ok(id, text(asJson({
+      vorschlag: { klasse: kurs.klasse, fach: kurs.fach, kurs_id: kurs.id, note: a.note, art: a.art || "mündlich" },
+      kandidaten,
+      hinweis: "Es wurde noch NICHTS eingetragen. Der Mensch entscheidet in der Freigabe-Oberfläche."
+    })));
+  }
+
+  // Die Prüfung im Server: gilt für JEDEN Aufruf, egal ob vom LLM, von der App oder von woanders.
+  function noteInDatenbankSchreiben(a) {
+    if (!(a.note >= 1 && a.note <= 6)) return { error: `Fehler: Die Note ${a.note} ist ungültig. Erlaubt sind 1.0 bis 6.0.` };
+    if (!ARTEN.includes(a.art)) return { error: `Fehler: Die Art „${a.art}“ ist ungültig. Erlaubt: ${ARTEN.join(", ")}.` };
+    const s = alleSchueler().find(x => x.id === a.schueler_id);
+    if (!s) return { error: `Fehler: Es gibt keine Schülerin und keinen Schüler mit der id ${a.schueler_id}.` };
+    const k = rowsToObjects("kurse", ["id", "fach", "klasse"]).find(x => x.id === a.kurs_id);
+    if (!k) return { error: `Fehler: Es gibt keinen Kurs mit der id ${a.kurs_id}.` };
+    if (k.klasse !== s.klasse) return { error: `Fehler: ${s.vorname} ${s.nachname} (${s.klasse}) ist nicht im Kurs ${k.fach} ${k.klasse}.` };
+    const neu = Math.max(...DB.noten.rows.map(r => r[0])) + 1;
+    DB.noten.rows.push([neu, s.id, k.id, a.note, new Date().toISOString().slice(0, 10), a.art]);
+    return { text: `Note ${a.note.toFixed(1)} (${a.art}) für ${s.vorname} ${s.nachname}, ${k.fach} ${k.klasse} eingetragen (noten.id = ${neu}).` };
+  }
+
   function callTool(id, params) {
     if (!params || typeof params.name !== "string") return err(id, -32602, "Invalid params: 'name' fehlt");
     const tool = TOOLS.find(t => t.name === params.name);
     if (!tool) return err(id, -32602, `Unknown tool: ${params.name}`);
     const args = params.arguments || {};
-    for (const r of tool.inputSchema.required || []) {
-      if (typeof args[r] !== "string") return err(id, -32602, `Invalid params: Argument '${r}' (string) fehlt`);
+    const passt = (wert, typ) => typ === "integer" ? Number.isInteger(wert) : typeof wert === typ;
+    for (const [name, def] of Object.entries(tool.inputSchema.properties)) {
+      const pflicht = (tool.inputSchema.required || []).includes(name);
+      if (args[name] === undefined ? pflicht : !passt(args[name], def.type)) {
+        return err(id, -32602, `Invalid params: Argument '${name}' (${def.type}) fehlt oder hat den falschen Typ`);
+      }
+    }
+    if (tool.name === "notenuebersicht") return notenuebersicht(id, args);
+    if (tool.name === "note_vorschlagen") return noteVorschlagen(id, args);
+    if (tool.name === "note_freigeben") {
+      const r = noteInDatenbankSchreiben(args);
+      return ok(id, text(r.error || r.text, !!r.error));
     }
     if (tool.name === "list_tables") return ok(id, text(asJson(Object.keys(DB).map(name => ({ name })))));
     if (tool.name === "describe_table") {
@@ -176,7 +314,7 @@
             protocolVersion: PROTOCOL,
             capabilities: { tools: { listChanged: false }, resources: {}, prompts: {} },
             serverInfo: { name: "SQLite Schul-Datenbank (Simulation)", version: "1.0.0" },
-            instructions: "Nur Lesezugriff. Tabellen: schueler, lehrer, kurse, noten."
+            instructions: "query_database liest nur (SELECT). Tabellen: schueler, lehrer, kurse, noten. Noten werden nur über die Freigabe-Oberfläche eingetragen."
           }), notes
         };
     }
@@ -189,12 +327,34 @@
     switch (msg.method) {
       case "tools/list":
         return { response: ok(id, { tools: TOOLS }), notes };
-      case "tools/call":
-        return { response: callTool(id, p), notes };
+      case "tools/call": {
+        const response = callTool(id, p);
+        const tool = p && TOOLS.find(t => t.name === p.name);
+        const okay = response.result && !response.result.isError;
+        if (tool && tool._meta && okay) {
+          if (tool._meta.ui.visibility && !tool._meta.ui.visibility.includes("model")) {
+            notes.push("Achtung: note_freigeben ist mit visibility [\"app\"] nur für die Oberfläche gedacht. Ein Host mit MCP-Apps-Unterstützung zeigt es dem LLM gar nicht an.",
+              "Der Server hat es trotzdem ausgeführt, weil du als Client es direkt aufgerufen hast. visibility ist eine Absprache, keine Sicherheitsgrenze. Was wirklich schützt, ist die Prüfung im Server.");
+          } else {
+            notes.push(`Dieses Tool verweist mit _meta.ui.resourceUri auf ${tool._meta.ui.resourceUri}.`,
+              "Ein Host mit MCP-Apps-Unterstützung würde jetzt diese Seite mit resources/read holen und im Chat anzeigen. Im Terminal siehst du nur die Daten, wie bei einem Host ohne MCP Apps.");
+          }
+        }
+        return { response, notes };
+      }
       case "resources/list":
-        notes.push("Resources gibt es nur in der Simulation. Der echte Projektserver bietet nur Tools an.");
-        return { response: ok(id, { resources: [{ uri: "schule://schema", name: "schema", title: "Datenbankschema", mimeType: "text/plain" }] }), notes };
+        notes.push("Die Resource schule://schema gibt es nur in der Simulation. Die ui://-Seiten bietet auch der echte Projektserver an (MCP Apps).");
+        return {
+          response: ok(id, {
+            resources: [{ uri: "schule://schema", name: "schema", title: "Datenbankschema", mimeType: "text/plain" }]
+              .concat(Object.entries(UI_RESOURCES).map(([uri, r]) => ({ uri, name: r.name, title: r.title, mimeType: UI_MIME })))
+          }), notes
+        };
       case "resources/read":
+        if (p && UI_RESOURCES[p.uri]) {
+          notes.push("Das ist die HTML-Seite einer MCP-App. Der Host zeigt sie abgeschottet (Sandbox) im Chat an. _meta.ui.csp legt fest, von welchen Adressen sie Skripte laden darf.");
+          return { response: ok(id, { contents: [{ uri: p.uri, mimeType: UI_MIME, text: UI_RESOURCES[p.uri].text, _meta: { ui: UI_CSP } }] }), notes };
+        }
         if (!p || p.uri !== "schule://schema") return { response: err(id, -32002, "Resource not found", { uri: p && p.uri }), notes };
         return {
           response: ok(id, {
@@ -236,11 +396,16 @@
     ["tools/call → query_database", { jsonrpc: "2.0", id: 6, method: "tools/call", params: { name: "query_database", arguments: { query: "SELECT vorname, nachname, klasse FROM schueler WHERE klasse = '10a'" } } }],
     ["resources/list", { jsonrpc: "2.0", id: 7, method: "resources/list" }],
     ["resources/read", { jsonrpc: "2.0", id: 8, method: "resources/read", params: { uri: "schule://schema" } }],
-    ["prompts/get", { jsonrpc: "2.0", id: 9, method: "prompts/get", params: { name: "notenbericht", arguments: { klasse: "5a" } } }]
+    ["prompts/get", { jsonrpc: "2.0", id: 9, method: "prompts/get", params: { name: "notenbericht", arguments: { klasse: "5a" } } }],
+    ["MCP App: tools/call → notenuebersicht", { jsonrpc: "2.0", id: 10, method: "tools/call", params: { name: "notenuebersicht", arguments: { klasse: "7a", fach: "Mathematik" } } }],
+    ["MCP App: resources/read → ui://…", { jsonrpc: "2.0", id: 11, method: "resources/read", params: { uri: "ui://schule/notenuebersicht.html" } }],
+    ["MCP App: tools/call → note_vorschlagen", { jsonrpc: "2.0", id: 12, method: "tools/call", params: { name: "note_vorschlagen", arguments: { klasse: "7a", nachname: "Werner", fach: "Mathematik", note: 2.0, art: "Schulaufgabe" } } }]
   ];
 
   window.MCPSim = {
     handle,
+    // Für die App-Vorführungen: Tool direkt aufrufen, als stünde die Verbindung schon (ändert den Terminal-Zustand nicht)
+    tool(name, args, id = 1) { return callTool(id, { name, arguments: args }); },
     reset() { state = "new"; },
     get state() { return state; },
     presets: PRESETS.map(([label, obj]) => [label, JSON.stringify(obj, null, 2)])

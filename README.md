@@ -9,8 +9,8 @@ Ein KI-Kern ist isoliert. In sechs Leveln verbinden die Lernenden ihn mit der Au
 | LVL 0 // OFFLINE | Warum MCP? Das N×M-Problem, die USB-Analogie | Adapter-Rechner |
 | LVL 1 // SIGNAL | JSON, JSON-RPC 2.0 (Request, Response, Notification, Fehlercodes) | JSON-Scanner, Signal-Baukasten |
 | LVL 2 // HANDSHAKE | Host, Client, Server, Transporte (stdio, HTTP), Lebenszyklus | Handshake-Sortierer |
-| LVL 3 // LINKED | Tools, Resources, Prompts, `tools/list`, `tools/call`, Fehlerarten | **Terminal mit simuliertem MCP-Server** |
-| LVL 4 // OPERATOR | Gesamtablauf mit dem LLM, Sicherheit, Agent – Host – Harness, Human-in-the-Loop | Signalverfolgung Schritt für Schritt |
+| LVL 3 // LINKED | Tools, Resources, Prompts, `tools/list`, `tools/call`, Fehlerarten, **MCP Apps** (`ui://`-Ressource, `_meta.ui.resourceUri`) | **Terminal mit simuliertem MCP-Server**, App im Chat (Notenübersicht) |
+| LVL 4 // OPERATOR | Gesamtablauf mit dem LLM, Sicherheit, Agent – Host – Harness, Human-in-the-Loop, Freigabe per MCP App, `visibility`, „Tunnel oder Bankschalter?“ | Signalverfolgung Schritt für Schritt, Freigabe-Vergleich |
 | LVL 5 // ARCHITECT | Eigenes Tool entwerfen, Praxisbezug zu [SQLite-per-MCP](https://github.com/FlowTheTensor/SQLite-per-MCP), Ausblick auf WebMCP | Tool-Designer (JSON + Python/FastMCP) |
 
 Jedes Level endet mit einem **Clearance-Test**: 5 richtige Antworten in Folge (Fragen werden teils zufällig erzeugt).
@@ -24,7 +24,7 @@ index.html      Startseite: Kern-Schaltbild, Level-Übersicht, Abschluss
 lvl0–lvl5.html  je eine Seite pro Level
 css/style.css   Design
 js/tests.js     Fragenpools der Clearance-Tests (leicht erweiterbar)
-js/sim.js       simulierter MCP-Server für das Terminal
+js/sim.js       simulierter MCP-Server für das Terminal und die MCP-App-Vorführungen
 js/app.js       Navigation, Widgets, Test-Logik
 img/            Bilder
 ```
@@ -38,6 +38,9 @@ die Reihenfolge wird automatisch gemischt.
 |---|---|
 | `hero.png` | Startseite oben |
 | `lvl0-kabelchaos.png` … `lvl5-architect.png` | Banner der sechs Level-Seiten |
+| `lvl3-mcp-app.png` | LVL 3, Station 6: Modul mit eigenem Bildschirm (MCP Apps) |
+| `lvl4-freigabe.png` | LVL 4, Station 5: Freigabe-Pult |
+| `lvl4-bankschalter.png` | LVL 4, Station 6: Bankschalter-Bild für „Ist eine MCP-App ein Tunnel?“ |
 | `system-online.png` | Abschluss auf der Startseite |
 | `og-image.png` | Vorschaubild beim Teilen des Links |
 | `logoschulecyber-klein.png` | Schullogo als angepinnter Zettel oben rechts (verlinkt auf [bsnes.de](https://www.bsnes.de)) |
@@ -66,6 +69,7 @@ Lokal testen: einfach `index.html` im Browser öffnen, oder `python -m http.serv
 
 - [MCP-Spezifikation](https://modelcontextprotocol.io/specification)
 - [JSON-RPC 2.0](https://www.jsonrpc.org/specification)
+- [MCP Apps (Erweiterung `io.modelcontextprotocol/ui`)](https://github.com/modelcontextprotocol/ext-apps)
 
 ## Farbschema hell/dunkel
 
